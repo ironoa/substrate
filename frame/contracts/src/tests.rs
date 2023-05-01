@@ -26,7 +26,7 @@ use crate::{
 	exec::{Frame, Key},
 	storage::DeletionQueueManager,
 	tests::test_utils::{get_contract, get_contract_checked},
-	wasm::{Determinism, ReturnCode as RuntimeReturnCode},
+	wasm::{Determinism, Memory, ReturnCode as RuntimeReturnCode},
 	weights::WeightInfo,
 	BalanceOf, Code, CodeHash, CodeInfoOf, CollectEvents, Config, ContractInfo, ContractInfoOf,
 	DebugInfo, DefaultAddressGenerator, DeletionQueueCounter, Error, MigrationInProgress,
@@ -190,9 +190,10 @@ impl Default for TestExtension {
 }
 
 impl ChainExtension<Test> for TestExtension {
-	fn call<E>(&mut self, env: Environment<E, InitState>) -> ExtensionResult<RetVal>
+	fn call<E, M>(&mut self, env: Environment<E, M, InitState>) -> ExtensionResult<RetVal>
 	where
 		E: Ext<T = Test>,
+		M: Memory<E::T>,
 	{
 		use codec::Decode;
 
@@ -240,9 +241,10 @@ impl RegisteredChainExtension<Test> for TestExtension {
 }
 
 impl ChainExtension<Test> for RevertingExtension {
-	fn call<E>(&mut self, _env: Environment<E, InitState>) -> ExtensionResult<RetVal>
+	fn call<E, M>(&mut self, _env: Environment<E, M, InitState>) -> ExtensionResult<RetVal>
 	where
 		E: Ext<T = Test>,
+		M: Memory<E::T>,
 	{
 		Ok(RetVal::Diverging { flags: ReturnFlags::REVERT, data: vec![0x4B, 0x1D] })
 	}
@@ -257,9 +259,10 @@ impl RegisteredChainExtension<Test> for RevertingExtension {
 }
 
 impl ChainExtension<Test> for DisabledExtension {
-	fn call<E>(&mut self, _env: Environment<E, InitState>) -> ExtensionResult<RetVal>
+	fn call<E, M>(&mut self, _env: Environment<E, M, InitState>) -> ExtensionResult<RetVal>
 	where
 		E: Ext<T = Test>,
+		M: Memory<E::T>,
 	{
 		panic!("Disabled chain extensions are never called")
 	}
@@ -274,9 +277,10 @@ impl RegisteredChainExtension<Test> for DisabledExtension {
 }
 
 impl ChainExtension<Test> for TempStorageExtension {
-	fn call<E>(&mut self, env: Environment<E, InitState>) -> ExtensionResult<RetVal>
+	fn call<E, M>(&mut self, env: Environment<E, M, InitState>) -> ExtensionResult<RetVal>
 	where
 		E: Ext<T = Test>,
+		M: Memory<E::T>,
 	{
 		let func_id = env.func_id();
 		match func_id {
