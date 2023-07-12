@@ -296,6 +296,7 @@ pub mod inflation;
 pub mod migrations;
 pub mod slashing;
 pub mod weights;
+pub mod delegation;
 
 mod pallet;
 
