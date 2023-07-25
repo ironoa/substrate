@@ -9192,6 +9192,7 @@ dependencies = [
  "sc-network-light",
  "sc-network-sync",
  "sc-utils",
+ "schnellru",
  "serde",
  "serde_json",
  "smallvec",

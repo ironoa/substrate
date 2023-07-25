@@ -72,6 +72,7 @@ use libp2p::{
 	PeerId,
 };
 use log::{debug, info, trace, warn};
+use schnellru::{ByLength, LruMap};
 use sp_core::hexdisplay::HexDisplay;
 use std::{
 	cmp,
@@ -264,6 +265,7 @@ impl DiscoveryConfig {
 					.expect("value is a constant; constant is non-zero; qed."),
 			),
 			records_to_publish: Default::default(),
+			peer_addresses: LruMap::new(ByLength::new(1024)),
 		}
 	}
 }
@@ -307,6 +309,12 @@ pub struct DiscoveryBehaviour {
 	/// did not return the record(in `FinishedWithNoAdditionalRecord`). We will then put the record
 	/// to these peers.
 	records_to_publish: HashMap<QueryId, Record>,
+	/// Auxiliary store for peer addresses.
+	///
+	/// To work around the issue where addresses get removed from Kademlia when peer disconnects
+	/// and it becomes undialable, store the addresses into `peer_addresses` and if Kademlia
+	/// doesn't yield addresses for the peer, fetch an address from this auxiliary address storage.
+	peer_addresses: LruMap<PeerId, HashSet<Multiaddr>>,
 }
 
 impl DiscoveryBehaviour {
@@ -374,6 +382,15 @@ impl DiscoveryBehaviour {
 					addr, peer_id, matching_protocol.as_ref(),
 				);
 				kademlia.add_address(peer_id, addr.clone());
+
+				match self.peer_addresses.get(peer_id) {
+					Some(info) => {
+						info.insert(addr);
+					},
+					None => {
+						self.peer_addresses.insert(*peer_id, HashSet::from([addr]));
+					},
+				}
 			} else {
 				trace!(
 					target: "sub-libp2p",
@@ -554,7 +571,7 @@ impl NetworkBehaviour for DiscoveryBehaviour {
 			.permanent_addresses
 			.iter()
 			.filter_map(|(p, a)| (*p == peer_id).then_some(a.clone()))
-			.collect::<Vec<_>>();
+			.collect::<HashSet<_>>();
 
 		if let Some(ephemeral_addresses) = self.ephemeral_addresses.get(&peer_id) {
 			list.extend(ephemeral_addresses.clone());
@@ -588,9 +605,13 @@ impl NetworkBehaviour for DiscoveryBehaviour {
 			list.extend(list_to_filter);
 		}
 
+		if let Some(addresses) = self.peer_addresses.get(&peer_id) {
+			list.extend(addresses.iter().cloned());
+		}
+
 		trace!(target: "sub-libp2p", "Addresses of {:?}: {:?}", peer_id, list);
 
-		Ok(list)
+		Ok(list.into_iter().collect::<Vec<_>>())
 	}
 
 	fn on_swarm_event(&mut self, event: FromSwarm<Self::ConnectionHandler>) {
@@ -615,6 +636,9 @@ impl NetworkBehaviour for DiscoveryBehaviour {
 								entry.remove();
 							}
 						}
+
+						// TODO: remove failed address
+						// if let Some(info) = self.peer_addresses.
 					}
 				}
 
