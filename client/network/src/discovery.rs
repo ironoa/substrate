@@ -220,6 +220,7 @@ impl DiscoveryConfig {
 			// auto-insertion and instead add peers manually.
 			config.set_kbucket_inserts(KademliaBucketInserts::Manual);
 			config.disjoint_query_paths(kademlia_disjoint_query_paths);
+			config.set_connection_idle_timeout(Duration::from_secs(5 * 60));
 
 			let store = MemoryStore::new(local_peer_id);
 			let mut kad = Kademlia::with_config(local_peer_id, store, config);
