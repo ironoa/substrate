@@ -1167,6 +1167,10 @@ where
 	/// Returns `false` when the worker should be shutdown.
 	/// Use in tests only.
 	pub async fn next_action(&mut self) -> bool {
+		log::warn!(target: "sub-libp2p", "number of connections {}",
+			Swarm::<Behaviour<B>>::connected_peers(&self.network_service).count()
+		);
+
 		futures::select! {
 			// Next message from the service.
 			msg = self.from_service.next() => {

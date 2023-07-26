@@ -685,11 +685,11 @@ impl NetworkBehaviour for DiscoveryBehaviour {
 					// NOTE: we might re-discover the same address multiple times
 					// in which case we just want to refrain from logging.
 					if self.known_external_addresses.insert(new_addr.clone()) {
-						info!(
-						  target: "sub-libp2p",
-						  "🔍 Discovered new external address for our node: {}",
-						  new_addr,
-						);
+						// info!(
+						//   target: "sub-libp2p",
+						//   "🔍 Discovered new external address for our node: {}",
+						//   new_addr,
+						// );
 					}
 				}
 
@@ -743,8 +743,10 @@ impl NetworkBehaviour for DiscoveryBehaviour {
 					// Schedule the next random query with exponentially increasing delay,
 					// capped at 60 seconds.
 					*next_kad_random_query = Delay::new(self.duration_to_next_kad);
-					self.duration_to_next_kad =
-						cmp::min(self.duration_to_next_kad * 2, Duration::from_secs(60));
+					self.duration_to_next_kad = Duration::from_secs(5);
+					// cmp::min(self.duration_to_next_kad * 2, Duration::from_secs(60));
+					// self.duration_to_next_kad =
+					// 	cmp::min(self.duration_to_next_kad * 2, Duration::from_secs(60));
 
 					if actually_started {
 						let ev = DiscoveryOut::RandomKademliaStarted;

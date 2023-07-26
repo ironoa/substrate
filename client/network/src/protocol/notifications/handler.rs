@@ -104,7 +104,7 @@ const OPEN_TIMEOUT: Duration = Duration::from_secs(10);
 /// After successfully establishing a connection with the remote, we keep the connection open for
 /// at least this amount of time in order to give the rest of the code the chance to notify us to
 /// open substreams.
-const INITIAL_KEEPALIVE_TIME: Duration = Duration::from_secs(5);
+const INITIAL_KEEPALIVE_TIME: Duration = Duration::from_secs(5 * 60);
 
 /// The actual handler once the connection has been established.
 ///
